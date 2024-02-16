@@ -17,7 +17,7 @@ struct LinkEProgrammerStruct
 	int lasthaltmode; // For non-003 chips
 };
 
-static void printChipInfo(enum RiscVChip chip) {
+static void printChipInfo(enum ChipType chip) {
 	switch(chip) {
 		case CHIP_CH32V10x:
 			fprintf(stderr, "Detected: CH32V10x\n");
@@ -43,7 +43,7 @@ static void printChipInfo(enum RiscVChip chip) {
 	}
 }
 
-static int checkChip(enum RiscVChip chip) {
+static int checkChip(enum ChipType chip) {
 	switch(chip) {
 		case CHIP_CH32V003:
 			return 0; // Use direct mode
@@ -212,7 +212,8 @@ static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup )
 int LEWriteReg32( void * dev, uint8_t reg_7_bit, uint32_t command )
 {
 	libusb_device_handle * devh = ((struct LinkEProgrammerStruct*)dev)->devh;
-
+	int retry_left = 10;
+retry:
 	const uint8_t iOP = 2; // op 2 = write
 	uint8_t req[] = {
 		0x81, 0x08, 0x06, reg_7_bit,
@@ -227,7 +228,7 @@ int LEWriteReg32( void * dev, uint8_t reg_7_bit, uint32_t command )
 	wch_link_command( devh, req, sizeof(req), &resplen, resp, sizeof(resp) );
 	if( resplen != 9 || resp[8] == 0x02 || resp[8] == 0x03 ) //|| resp[3] != reg_7_bit )
 	{
-		fprintf( stderr, "Error setting write reg. Tell cnlohr. Maybe we should allow retries here?\n" );
+		if( retry_left-- > 0 ) goto retry;
 		fprintf( stderr, "RR: %d :", resplen );
 		int i;
 		for( i = 0; i < resplen; i++ )
@@ -242,6 +243,8 @@ int LEWriteReg32( void * dev, uint8_t reg_7_bit, uint32_t command )
 int LEReadReg32( void * dev, uint8_t reg_7_bit, uint32_t * commandresp )
 {
 	libusb_device_handle * devh = ((struct LinkEProgrammerStruct*)dev)->devh;
+	int retry_left = 10;
+retry:
 	const uint8_t iOP = 1; // op 1 = read
 	uint32_t transferred;
 	uint8_t rbuff[128] = { 0 };
@@ -253,7 +256,7 @@ int LEReadReg32( void * dev, uint8_t reg_7_bit, uint32_t * commandresp )
 	*commandresp = ( rbuff[4]<<24 ) | (rbuff[5]<<16) | (rbuff[6]<<8) | (rbuff[7]<<0);
 	if( transferred != 9 || rbuff[8] == 0x02 || rbuff[8] == 0x03 ) //|| rbuff[3] != reg_7_bit )
 	{
-		fprintf( stderr, "Error setting write reg. Tell cnlohr. Maybe we should allow retries here?\n" );
+		if( retry_left-- > 0 ) goto retry;
 		fprintf( stderr, "RR: %d :", transferred );
 		int i;
 		for( i = 0; i < transferred; i++ )
@@ -364,7 +367,7 @@ static int LESetupInterface( void * d )
 		return -1;
 	}
 
-	enum RiscVChip chip = (enum RiscVChip)rbuff[3];
+	enum ChipType chip = (enum ChipType)rbuff[3];
 	printChipInfo(chip);
 
 	int result = checkChip(chip);
@@ -608,7 +611,7 @@ const uint8_t * bootloader_v2 = (const uint8_t*)
 int bootloader_len = 512;
 #endif
 
-static const uint8_t * GetFlashLoader( enum RiscVChip chip )
+static const uint8_t * GetFlashLoader( enum ChipType chip )
 {
 	switch(chip) {
 		case CHIP_CH32V10x:
@@ -626,7 +629,6 @@ static int InternalLinkEHaltMode( void * d, int mode )
 	if( mode == ((struct LinkEProgrammerStruct*)d)->lasthaltmode )
 		return 0;
 	((struct LinkEProgrammerStruct*)d)->lasthaltmode = mode;
-	
 	if( mode == 0 )
 	{
 		printf( "Holding in reset\n" );

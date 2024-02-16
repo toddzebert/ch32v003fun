@@ -893,7 +893,7 @@ static int DefaultWriteHalfWord( void * dev, uint32_t address_to_write, uint16_t
 	// Different address, so we don't need to re-write all the program regs.
 	// sh x8,0(x9)  // Write to the address.
 	MCF.WriteReg32( dev, DMPROGBUF0, 0x00849023 );
-	MCF.WriteReg32( dev, DMPROGBUF1, 0x00100073 ); // c.ebreak
+	MCF.WriteReg32( dev, DMPROGBUF1, 0x00100073 ); // ebreak
 
 	MCF.WriteReg32( dev, DMDATA0, address_to_write );
 	MCF.WriteReg32( dev, DMCOMMAND, 0x00231009 ); // Copy data to x9
@@ -919,7 +919,7 @@ static int DefaultReadHalfWord( void * dev, uint32_t address_to_write, uint16_t 
 	// Different address, so we don't need to re-write all the program regs.
 	// lh x8,0(x9)  // Write to the address.
 	MCF.WriteReg32( dev, DMPROGBUF0, 0x00049403 ); // lh x8, 0(x9)
-	MCF.WriteReg32( dev, DMPROGBUF1, 0x00100073 ); // c.ebreak
+	MCF.WriteReg32( dev, DMPROGBUF1, 0x00100073 ); // ebreak
 
 	MCF.WriteReg32( dev, DMDATA0, address_to_write );
 	MCF.WriteReg32( dev, DMCOMMAND, 0x00231009 ); // Copy data to x9
@@ -1433,7 +1433,7 @@ static int DefaultReadWord( void * dev, uint32_t address_to_read, uint32_t * dat
 		iss->currentstateval = address_to_read;
 
 		r |= MCF.WaitForDoneOp( dev, 0 );
-		if( r ) fprintf( stderr, "Fault on DefaultReadWord Part 1\n" );
+		if( r ) fprintf( stderr, "Fault on DefaultReadWord Part 1 (%d)\n", r );
 	}
 
 	if( iss->autoincrement )
@@ -1554,9 +1554,11 @@ void PostSetupConfigureInterface( void * dev )
 	case CHIP_CH58x:
 	default:
 		iss->nr_registers_for_debug = 32;
+		iss->arch_type = ARCH_RV32;
 		break;
 	case CHIP_CH32V003:
 		iss->nr_registers_for_debug = 16;
+		iss->arch_type = ARCH_RV32E;
 		break;
 	}
 }
@@ -1724,6 +1726,7 @@ int DefaultSetEnableBreakpoints( void * dev, int is_enabled, int single_step )
 
 static int DefaultHaltMode( void * dev, int mode )
 {
+printf( "DEFAULT HALT MODE %d\n", mode );
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 	switch ( mode )
 	{

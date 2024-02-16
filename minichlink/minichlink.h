@@ -91,6 +91,9 @@ inline static int IsAddressFlash( uint32_t addy ) { return ( addy & 0xff000000 )
 #define HALT_MODE_GO_TO_BOOTLOADER  3
 #define HALT_MODE_HALT_BUT_NO_RESET 5
 
+#define HALT_MODE_DEBUG_SKIP_AND_RESUME    4
+#define HALT_MODE_DEBUG_CS          9
+
 // Convert a 4-character string to an int.
 #define STTAG( x ) (*((uint32_t*)(x)))
 
@@ -104,14 +107,21 @@ struct ProgrammerStructBase
 
 #define MAX_FLASH_SECTORS 262144
 
-enum RiscVChip {
+enum ChipType {
+
+	// Do not mess with these, these are kinda determined by WCH
 	CHIP_CH32V10x = 0x01,
 	CHIP_CH57x = 0x02,
 	CHIP_CH56x = 0x03,
 	CHIP_CH32V20x = 0x05,
 	CHIP_CH32V30x = 0x06,
 	CHIP_CH58x = 0x07,
-	CHIP_CH32V003 = 0x09
+	CHIP_CH32V003 = 0x09,
+};
+
+enum ArchType {
+	ARCH_RV32E,
+	ARCH_RV32,
 };
 
 struct InternalState
@@ -126,9 +136,10 @@ struct InternalState
 	uint32_t ram_size;
 	int sector_size;
 	int flash_size;
-	enum RiscVChip target_chip_type;
+	enum ChipType target_chip_type;
 	uint8_t flash_sector_status[MAX_FLASH_SECTORS];  // 0 means unerased/unknown. 1 means erased.
-	int nr_registers_for_debug; // Updated by PostSetupConfigureInterface
+	int nr_registers_for_debug; // Updated by PostSetupConfigureInterface based on target_chip_type
+	enum ArchType arch_type; // Updated by PostSetupConfigureInterface based on target_chip_type
 };
 
 

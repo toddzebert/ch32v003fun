@@ -202,6 +202,7 @@ void HandleGDBPacket( void * dev, char * data, int len )
 	data++;
 
 	char cmd = *(data++);
+	//printf( "COMMAND: %c (%s)\n", cmd, data );
 	switch( cmd )
 	{
 	case 'q':
@@ -297,11 +298,11 @@ void HandleGDBPacket( void * dev, char * data, int len )
 		break;
 	case 'c':
 	case 'C':
-		RVDebugExec( dev, (cmd == 's' )?9:(cmd == 'C')?4:2 );
+		RVDebugExec( dev, (cmd == 's' )?HALT_MODE_DEBUG_CS:(cmd == 'C')?HALT_MODE_DEBUG_SKIP_AND_RESUME:HALT_MODE_RESUME );
 		SendReplyFull( "OK" );
 		break;
 	case 's':
-		RVDebugExec( dev, 4 );
+		RVDebugExec( dev, HALT_MODE_DEBUG_SKIP_AND_RESUME ); // Should this be HALT_MODE_RESUME?
 		SendReplyFull( "OK" );
 		//RVHandleGDBBreakRequest( dev );
 		RVSendGDBHaltReason( dev );

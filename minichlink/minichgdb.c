@@ -206,8 +206,8 @@ void RVDebugExec( void * dev, int halt_reset_or_resume )
 		exit( -6 );
 	}
 
-	// Special case halt_reset_or_resume = 4: Skip instruction and resume.
-	if( halt_reset_or_resume == 4 || halt_reset_or_resume == 2 )
+	// Special case halt_reset_or_resume = HALT_MODE_DEBUG_CONTINUE: Skip instruction and resume.
+	if( halt_reset_or_resume == HALT_MODE_DEBUG_SKIP_AND_RESUME || halt_reset_or_resume == HALT_MODE_RESUME )
 	{
 		// First see if we already know about this breakpoint
 		int matchingbreakpoint = -1;
@@ -253,7 +253,7 @@ void RVDebugExec( void * dev, int halt_reset_or_resume )
 			else
 				; //No change, it is a normal instruction.
 
-			if( halt_reset_or_resume == 4 )
+			if( halt_reset_or_resume == HALT_MODE_DEBUG_SKIP_AND_RESUME )
 			{
 				MCF.SetEnableBreakpoints( dev, 1, 1 );
 			}
@@ -262,9 +262,9 @@ void RVDebugExec( void * dev, int halt_reset_or_resume )
 		halt_reset_or_resume = HALT_MODE_RESUME;
 	}
 
-	if( shadow_running_state != ( halt_reset_or_resume >= 2 ) )
+	if( shadow_running_state != ( halt_reset_or_resume >= HALT_MODE_RESUME ) )
 	{
-		if( halt_reset_or_resume < 2 )
+		if( halt_reset_or_resume < HALT_MODE_RESUME )
 		{
 			RVCommandPrologue( dev );
 		}
@@ -275,7 +275,7 @@ void RVDebugExec( void * dev, int halt_reset_or_resume )
 		MCF.HaltMode( dev, halt_reset_or_resume );
 	}
 
-	shadow_running_state = halt_reset_or_resume >= 2;
+	shadow_running_state = halt_reset_or_resume >= HALT_MODE_RESUME;
 }
 
 int RVReadMem( void * dev, uint32_t memaddy, uint8_t * payload, int len )
@@ -320,11 +320,16 @@ static int InternalWriteBreakpointIntoAddress( void * dev, int i )
 		uint32_t ebreak = 0x00100073; // ebreak
 		r = MCF.WriteBinaryBlob( dev, address, 4, (uint8_t*)&ebreak );
 	}
-	else
+	else if( software_breakpoint_type[i] == 2 )
 	{
 		//16-bit instruction
 		uint32_t ebreak = 0x9002; // c.ebreak
 		r = MCF.WriteBinaryBlob( dev, address, 2, (uint8_t*)&ebreak );
+	}
+	else
+	{
+		fprintf( stderr, "Sanity issue - invalid breakpoint attempted to be written\n" );
+		r = -17;
 	}
 	return r;
 }
