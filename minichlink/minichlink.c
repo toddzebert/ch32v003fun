@@ -1975,6 +1975,8 @@ int SetupAutomaticHighLevelFunctions( void * dev )
 		MCF.SetupInterface = DefaultSetupInterface;
 	if( !MCF.WriteBinaryBlob )
 		MCF.WriteBinaryBlob = DefaultWriteBinaryBlob;
+	if( !MCF.WriteBinaryBlobSyncNoExecute )
+		MCF.WriteBinaryBlobSyncNoExecute = DefaultWriteBinaryBlob;
 	if( !MCF.ReadBinaryBlob )
 		MCF.ReadBinaryBlob = DefaultReadBinaryBlob;
 	if( !MCF.WriteWord )

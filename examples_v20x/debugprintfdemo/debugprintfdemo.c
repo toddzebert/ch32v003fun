@@ -32,14 +32,14 @@ int main()
 	{
 		GPIOD->BSHR = 1;	 // Turn on GPIOs
 		GPIOC->BSHR = 1;
-		printf( "+%lu\n", count++ );
+		printf( "7+%lu\n", count++ );
 		Delay_Ms(100);
 		int i;
 		for( i = 0; i < 10000; i++ )
 			poll_input();
 		GPIOD->BSHR = (1<<16); // Turn off GPIODs
 		GPIOC->BSHR = (1<<16);
-		printf( "-%lu[%c]\n", count++, last );
+		printf( "7-%lu[%c]\n", count++, last );
 		Delay_Ms(100);
 	}
 }

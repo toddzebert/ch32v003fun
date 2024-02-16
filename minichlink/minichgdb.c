@@ -299,12 +299,12 @@ static int InternalClearFlashOfSoftwareBreakpoint( void * dev, int i )
 	if( software_breakpoint_type[i] == 1 )
 	{
 		//32-bit instruction
-		r = MCF.WriteBinaryBlob( dev, software_breakpoint_addy[i], 4, (uint8_t*)&previous_word_at_breakpoint_address[i] );
+		r = MCF.WriteBinaryBlobSyncNoExecute( dev, software_breakpoint_addy[i], 4, (uint8_t*)&previous_word_at_breakpoint_address[i] );
 	}
 	else
 	{
 		//16-bit instruction
-		r = MCF.WriteBinaryBlob( dev, software_breakpoint_addy[i], 2, (uint8_t*)&previous_word_at_breakpoint_address[i] );
+		r = MCF.WriteBinaryBlobSyncNoExecute( dev, software_breakpoint_addy[i], 2, (uint8_t*)&previous_word_at_breakpoint_address[i] );
 	}
 
 	return r;
@@ -318,13 +318,13 @@ static int InternalWriteBreakpointIntoAddress( void * dev, int i )
 	{
 		//32-bit instruction
 		uint32_t ebreak = 0x00100073; // ebreak
-		r = MCF.WriteBinaryBlob( dev, address, 4, (uint8_t*)&ebreak );
+		r = MCF.WriteBinaryBlobSyncNoExecute( dev, address, 4, (uint8_t*)&ebreak );
 	}
 	else if( software_breakpoint_type[i] == 2 )
 	{
 		//16-bit instruction
 		uint32_t ebreak = 0x9002; // c.ebreak
-		r = MCF.WriteBinaryBlob( dev, address, 2, (uint8_t*)&ebreak );
+		r = MCF.WriteBinaryBlobSyncNoExecute( dev, address, 2, (uint8_t*)&ebreak );
 	}
 	else
 	{
@@ -346,6 +346,7 @@ static int InternalDisableBreakpoint( void * dev, int i )
 
 int RVHandleBreakpoint( void * dev, int set, uint32_t address )
 {
+printf( "HandleBreakpoint\n" );
 	int i;
 	int first_free = -1;
 	for( i = 0; i < MAX_SOFTWARE_BREAKPOINTS; i++ )
@@ -395,13 +396,36 @@ int RVHandleBreakpoint( void * dev, int set, uint32_t address )
 				software_breakpoint_addy[i] = address;
 				previous_word_at_breakpoint_address[i] = readval_at_addy & 0xffff;
 			}
+
+	uint32_t status;
+
+	if( MCF.ReadReg32( dev, DMSTATUS, &status ) )
+	{
+		fprintf( stderr, "Error: Could not get part status\n" );
+		return;
+	}
+
+
+printf( "Getting current processor state: %08x \n", status );
+
+printf( "Writing Into Breakpoint Address\n" );
 			InternalWriteBreakpointIntoAddress( dev, i );
+
+	if( MCF.ReadReg32( dev, DMSTATUS, &status ) )
+	{
+		fprintf( stderr, "Error: Could not get part status\n" );
+		return;
+	}
+
+
+printf( "Getting current processor state: %08x \n", status );
 		}
 		else
 		{
 			// Already unset.
 		}
 	}
+printf( "HandleBreakpointDone\n" );
 
 	return 0;
 }
@@ -414,7 +438,7 @@ int RVWriteRAM(void * dev, uint32_t memaddy, uint32_t length, uint8_t * payload 
 		exit( -6 );
 	}
 
-	int r = MCF.WriteBinaryBlob( dev, memaddy, length, payload );
+	int r = MCF.WriteBinaryBlobSyncNoExecute( dev, memaddy, length, payload );
 
 	return r;
 }

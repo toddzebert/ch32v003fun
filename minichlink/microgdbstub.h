@@ -202,7 +202,7 @@ void HandleGDBPacket( void * dev, char * data, int len )
 	data++;
 
 	char cmd = *(data++);
-	//printf( "COMMAND: %c (%s)\n", cmd, data );
+	printf( "COMMAND: %c (%s)\n", cmd, data );
 	switch( cmd )
 	{
 	case 'q':
@@ -432,16 +432,16 @@ void HandleGDBPacket( void * dev, char * data, int len )
 		{
 			data += 10; // FlashWrite
 
-			printf( "Write\n" );
+printf( "Write\n" ); // DELETEME
 			if( *(data++) != ':' ) goto err;
 			uint32_t address_to_write = 0;
 			if( ReadHex( &data, -1, &address_to_write ) < 0 ) goto err;
 			if( *(data++) != ':' ) goto err;
 			int toflash = len - (data - odata) - 1;
-printf( "LEN: %08x %d %d %c\n", address_to_write, len, toflash, data[0] );
+printf( "LEN: %08x %d %d %c\n", address_to_write, len, toflash, data[0] ); // DELETEME
 			if( RVWriteFlash( dev, address_to_write, len, (uint8_t*)data ) == 0 )
 			{
-				printf( "Write OK\n" );
+printf( "Write OK\n" ); // DELETEME
 				SendReplyFull( "OK" ); 
 			}
 			else

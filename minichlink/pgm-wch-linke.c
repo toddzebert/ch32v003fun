@@ -159,6 +159,8 @@ static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup )
 				exit( -10 );
 			}
 
+			// To switch back to ARM mode, from RISCV mode, you can: \x81\xff\x01\x41 on EP 1
+
 			// https://github.com/wagiminator/MCU-Flash-Tools/blob/main/rvmode.py
 			uint8_t rbuff[4] = { 0x81, 0xff, 0x01, 0x52 };
 			int transferred = 0;
@@ -735,7 +737,7 @@ static int LEWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t len,
 						 (uint8_t)(len >> 8), (uint8_t)(len & 0xff) };
 	wch_link_command( (libusb_device_handle *)dev, rksbuff, 11, 0, 0, 0 );
 	
-	wch_link_command( (libusb_device_handle *)dev, "\x81\x02\x01\x05", 4, 0, 0, 0 );
+	wch_link_command( (libusb_device_handle *)dev, "\x81\x02\x01\x05", 4, 0, 0, 0 ); // Actually needed to do a write.
 
 	const uint8_t *bootloader = GetFlashLoader(iss->target_chip_type);
 
@@ -759,7 +761,17 @@ static int LEWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t len,
 		exit( -109 );
 	}
 	
-	wch_link_command( (libusb_device_handle *)dev, "\x81\x02\x01\x02", 4, 0, 0, 0 );
+	wch_link_command( (libusb_device_handle *)dev, "\x81\x02\x01\x02", 4, 0, 0, 0 ); // Absolutely required to actually do a write.
+
+
+	uint32_t _status;
+	if( LEReadReg32( d, DMSTATUS, &_status ) )
+	{
+		fprintf( stderr, "Error: Could not get part status\n" );
+		return;
+	}
+	printf( "RRRRRRRRRMCF %08x\n", _status );
+
 
 	for( pplace = 0; pplace < padlen; pplace += iss->sector_size )
 	{
@@ -777,6 +789,14 @@ static int LEWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t len,
 			WCHCHECK( libusb_bulk_transfer( (libusb_device_handle *)dev, 0x02, blob+pplace, iss->sector_size, &transferred, WCHTIMEOUT ) );
 		}
 	}
+
+
+	if( LEReadReg32( d, DMSTATUS, &_status ) )
+	{
+		fprintf( stderr, "Error: Could not get part status\n" );
+		return;
+	}
+	printf( "RRRRRRRRRMCF %08x\n", _status );
 	return 0;
 }
 

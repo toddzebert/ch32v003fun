@@ -75,6 +75,9 @@ struct MiniChlinkFunctions
 
 	int (*WriteByte)( void * dev, uint32_t address_to_write, uint8_t data );
 	int (*ReadByte)( void * dev, uint32_t address_to_read, uint8_t * data );
+
+	// On some programmers, writing binary blobs causes the chip to continue execution.  This has the guarantee of not continuing execution.
+	int (*WriteBinaryBlobSyncNoExecute)( void * dev, uint32_t address_to_write, uint32_t blob_size, uint8_t * blob );
 };
 
 /** If you are writing a driver, the minimal number of functions you can implement are:
