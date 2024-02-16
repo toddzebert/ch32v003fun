@@ -737,7 +737,11 @@ static int DefaultWaitForFlash( void * dev )
 	{
 		rw = 0;
 		MCF.ReadWord( dev, (intptr_t)&FLASH->STATR, &rw ); // FLASH_STATR => 0x4002200C
-		if( timeout++ > 100 ) return -1;
+		if( timeout++ > 1000 )
+		{
+			fprintf( stderr, "Wait for flash timeout. FLASH->STATR = %08x\n", rw );
+			return -1;
+		}
 	} while(rw & 3);  // BSY flag for 003, or WRBSY for other processors.
 
 	if( rw & FLASH_STATR_WRPRTERR )
@@ -1094,7 +1098,7 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 	uint32_t rw;
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 	int sectorsize = iss->sector_size;
-
+fprintf( stderr, "SECTOR: %d\n", sectorsize );
 	// We can't write into flash when mapped to 0x00000000
 	if( address_to_write < 0x01000000 )
 		address_to_write |= 0x08000000;
