@@ -16,7 +16,7 @@ funPinMode(PC1, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SDA
 funPinMode(PC2, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SCL
 ```
 
-For chips other than the CH32V003 you will need to change the pin numbers to the pins corresponding with the I2C1 peripheral. If you want to use the alternative pins for the I2C periperal in addition to configuring the pins you have to configure the chip to use the the alternative pins using the `I2C1_RM` and `I2C1REMAP1` fields of the `AFIO_PCFR1` register.
+For chips other than the CH32V003 you will need to change the pin numbers to the pins corresponding with the I2C1 peripheral. If you want to use the alternative pins for the I2C periperal in addition to configuring the pins you have to configure the chip to use the alternative pins using the `I2C1_RM` and `I2C1REMAP1` fields of the `AFIO_PCFR1` register.
 
 Then initialize the I2C1 peripheral in slave mode using:
 
